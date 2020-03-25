@@ -137,13 +137,15 @@ import java.util.Collection;
 public interface ExecutorService extends Executor {
 
     /**
-     * Initiates an orderly shutdown in which previously submitted
+     * initiates an orderly shutdown in which previously submitted
      * tasks are executed, but no new tasks will be accepted.
-     * Invocation has no additional effect if already shut down.
+     * invocation has no additional effect if already shut down.
      *
+     * 启动一个有序关闭，在此过程中执行先前提交的任务，但不接受任何新任务。如果已经关闭，调用不会有额外的效果。
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
+     * 此方法不会等待以前提交的任务*完成执行。使用{@link #awaittermination awaittermination} *来完成。
      *
      * @throws SecurityException if a security manager exists and
      *         shutting down this ExecutorService may manipulate
@@ -201,6 +203,7 @@ public interface ExecutorService extends Executor {
      * request, or the timeout occurs, or the current thread is
      * interrupted, whichever happens first.
      *
+     *直到所有任务在关闭请求后完成执行，或超时发生，或当前线程被中断(以先发生的情况为准),一直阻塞。
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument
      * @return {@code true} if this executor terminated and
