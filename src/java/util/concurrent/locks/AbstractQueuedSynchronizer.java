@@ -380,7 +380,7 @@ public abstract class AbstractQueuedSynchronizer
     static final class Node {
         /** Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
-        /** Marker to indicate a node is waiting in exclusive mode */
+        /** marker to indicate a node is waiting in exclusive mode  标识 一个排他模式等待的节点 */
         static final Node EXCLUSIVE = null;
 
         /** waitStatus value to indicate thread has cancelled */
@@ -488,7 +488,7 @@ public abstract class AbstractQueuedSynchronizer
          * Returns previous node, or throws NullPointerException if null.
          * Use when predecessor cannot be null.  The null check could
          * be elided, but is present to help the VM.
-         *
+         * 返回上一个节点
          * @return the predecessor of this node
          */
         final Node predecessor() throws NullPointerException {
@@ -518,12 +518,14 @@ public abstract class AbstractQueuedSynchronizer
      * initialization, it is modified only via method setHead.  Note:
      * If head exists, its waitStatus is guaranteed not to be
      * CANCELLED.
+     * 队首
      */
     private transient volatile Node head;
 
     /**
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
+     * 队尾
      */
     private transient volatile Node tail;
 
@@ -555,7 +557,7 @@ public abstract class AbstractQueuedSynchronizer
      * value if the current state value equals the expected value.
      * This operation has memory semantics of a {@code volatile} read
      * and write.
-     *
+     * cas 操作 将expect 赋值成 update
      * @param expect the expected value
      * @param update the new value
      * @return {@code true} if successful. False return indicates that the actual
@@ -598,7 +600,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Creates and enqueues node for current thread and given mode.
-     *
+     *  创建队列节点并加入队列
      * @param mode Node.EXCLUSIVE for exclusive, Node.SHARED for shared
      * @return the new node
      */
@@ -613,7 +615,7 @@ public abstract class AbstractQueuedSynchronizer
                 return node;
             }
         }
-        enq(node);
+        enq(node);  // 加入队列
         return node;
     }
 
@@ -859,15 +861,15 @@ public abstract class AbstractQueuedSynchronizer
         try {
             boolean interrupted = false;
             for (;;) {
-                final Node p = node.predecessor();
-                if (p == head && tryAcquire(arg)) {
+                final Node p = node.predecessor();  // 获得上一个节点
+                if (p == head && tryAcquire(arg)) {  // 前一个在 运行，看下是否运行王
                     setHead(node);
                     p.next = null; // help GC
                     failed = false;
                     return interrupted;
                 }
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                    parkAndCheckInterrupt())
+                if (shouldParkAfterFailedAcquire(p, node) && // 是否应该park
+                    parkAndCheckInterrupt())  // park
                     interrupted = true;
             }
         } finally {
@@ -1195,8 +1197,8 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      */
     public final void acquire(int arg) {
-        if (!tryAcquire(arg) &&
-            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        if (!tryAcquire(arg) &&   // 1、 第一次 返回true  不做后面操作  2、 重入不做后面操作
+            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))  // addWaiter   Node.EXCLUSIVE
             selfInterrupt();
     }
 
@@ -1516,7 +1518,7 @@ public abstract class AbstractQueuedSynchronizer
         Node t = tail; // Read fields in reverse initialization order
         Node h = head;
         Node s;
-        return h != t &&
+        return h != t &&   // h == t 且 都为 null return fasle
             ((s = h.next) == null || s.thread != Thread.currentThread());
     }
 
