@@ -377,6 +377,29 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * we can only terminate if, after seeing that it is empty, we see
      * that workerCount is 0 (which sometimes entails a recheck -- see
      * below).
+     * 主池控制状态、ctl是一个原子整数包装
+     * 两个概念字段
+     * workerCount,指示的有效数量的线程
+     * runState,指示是否运行,关闭等
+     * 为了装成一个int,我们限制workerCount(2 ^ 29) 1(约5亿)线程而不是(2 ^ 31)1(2 *十亿)否则能上演的。
+     * 如果这是将来中的一个问题，那么变量可以更改为一个AtomicLong，和下面调整的shift/mask常量。
+     * workerCount是被允许开始和不允许停止的工人的数量。该值可能与实际活动线程的数量有暂时性的不同，
+     * 例如，当线程工厂在请求时未能创建线程，以及退出的线程在终止前仍在执行记帐时。用户可见池大小报告为当前大小的工人。
+     * runState提供主要的生命周期控制,
+     * 在价值观:
+     * 运行:接受新任务和过程排队任务
+     * 关闭:不接受新任务,但进程队列任务
+     * 站:不接受新任务,不过程排队任务,* *整理和中断正在进行的任务:所有的任务都已经终止，workerCount为0，
+     * 线程过渡到状态清理*将运行ended()钩子方法* ended: ended()已经完成* *这些值之间的数字顺序问题，以允许有序的比较。
+     * 运行状态随着时间单调增加，但不需要触及每个状态。
+     * 转换:运行- >关闭*关闭()调用,也许隐含在finalize()
+     * (运行或关闭)- >停止对调用shutdownNow *()
+     * 关闭- >整理*当队列和池是空*站- >整理*当池为空
+     * 整理- >终止*时终止()挂钩方法完成
+     * 线程等待awaitTermination()将返回当*状态达到终止。
+     *
+     * 检测从关闭过渡到整理不如你想因为*简单队列可能成为*空后在关闭状态,非空,
+     * 反之亦然,但我们只能终止,如果看到它是空的之后,我们看到workerCount是0(有时需要复核,见下面的)。
      */
     private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
     private static final int COUNT_BITS = Integer.SIZE - 3;
@@ -1343,6 +1366,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * executor has been shutdown or because its capacity has been reached,
      * the task is handled by the current {@code RejectedExecutionHandler}.
      *
+     *在将来的某个时候执行给定的任务。任务*可以在新线程中执行，也可以在现有的池线程中执行。
+     *如果任务无法提交执行，或者因为这个executor已经关闭，或者因为它的容量已经达到,
+     * 该任务由当前{@code RejectedExecutionHandler}处理。
+     *
      * @param command the task to execute
      * @throws RejectedExecutionException at discretion of
      *         {@code RejectedExecutionHandler}, if the task
@@ -1371,6 +1398,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          * 3. If we cannot queue task, then we try to add a new
          * thread.  If it fails, we know we are shut down or saturated
          * and so reject the task.
+         *
+         *  1。如果运行的线程小于corePoolSize，则尝试*用给定的命令启动一个新线程
+         * 任务。对addWorker的调用会自动地检查runState和workerCount，从而通过返回false来防止在不应该添加线程的情况下添加线程的错误警报。
+         * 2。如果一个任务可以成功地进入队列，那么我们仍然需要*来再次检查是否应该添加一个线程(因为现有的线程在最后一次检查后死亡)，
+         * 或者池在进入这个方法后关闭。因此，我们重新检查状态，如果有必要，如果停止，则回滚队列;如果没有，则启动一个新线程。
+         * 3。如果我们不能队列任务，然后我们尝试添加一个新的*线程。如果它失败了，我们知道我们被关闭或饱和*，所以拒绝任务。
          */
         int c = ctl.get();
         if (workerCountOf(c) < corePoolSize) {
@@ -2098,6 +2131,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * A handler for rejected tasks that discards the oldest unhandled
      * request and then retries {@code execute}, unless the executor
      * is shut down, in which case the task is discarded.
+     * 一个用于被拒绝任务的处理程序，它丢弃最古老的未处理请求，然后重试{@code execute}，除非executor *关闭，在这种情况下任务被丢弃。
      */
     public static class DiscardOldestPolicy implements RejectedExecutionHandler {
         /**
