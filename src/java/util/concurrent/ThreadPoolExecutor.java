@@ -883,6 +883,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * creation fails, either due to the thread factory returning
      * null, or due to an exception (typically OutOfMemoryError in
      * Thread.start()), we roll back cleanly.
+     *检查是否可以根据当前的池状态和给定的界限(核心或最大值)添加新的worker。
+     * 如果是这样，则相应地调整工作者计数，如果可能，则创建并启动一个* new worker，
+     * 运行firstTask作为其first task。如果池已停止或有资格关闭，则此方法返回false。
+     * 如果线程工厂在被请求时没有创建一个线程，那么它也会返回false。
+     * 如果线程创建失败，要么是由于线程工厂返回* null，要么是由于一个异常(通常是在*thread .start()中OutOfMemoryError)，我们干净地回滚。
      *
      * @param firstTask the task the new thread should run first (or
      * null if none). Workers are created with an initial first task
@@ -891,6 +896,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * or when the queue is full (in which case we must bypass queue).
      * Initially idle threads are usually created via
      * prestartCoreThread or to replace other dying workers.
+     *
+     * 新线程应该先运行任务(如果没有，则null)。
+     * 当比corePoolSize线程少时(在这种情况下，我们总是启动一个线程)，或当队列已满时(在这种情况下，我们必须绕过队列)，
+     * 工人被创建为初始的第一个任务(在方法execute()中)，以绕过队列。最初的空闲线程通常是通过prestartCoreThread创建的，
+     * 或者用来替换其他正在死亡的worker。
      *
      * @param core if true use corePoolSize as bound, else
      * maximumPoolSize. (A boolean indicator is used here rather than a
