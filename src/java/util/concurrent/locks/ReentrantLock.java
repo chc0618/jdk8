@@ -120,11 +120,31 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         /**
          * Performs {@link Lock#lock}. The main reason for subclassing
          * is to allow fast path for nonfair version.
+         * 锁对象：其实就是ReentrantLock的实例对象，下文应用代码第一行中的lock对象就是所谓的锁
+         * 自由状态：自由状态表示锁对象没有被别的线程持有，计数器为0
+         * 计数器：再lock对象中有一个字段state用来记录上锁次数，比如lock对象是自由状态则state为0，如果大于零则表示被线程持有了，当然也有重入那么state则>1
+         * waitStatus：仅仅是一个状态而已；ws是一个过渡状态，在不同方法里面判断ws的状态做不同的处理，所以ws=0有其存在的必要性
+         * tail：队列的队尾 head：队列的对首 ts：第二个给lock加锁的线程 tf：第一个给lock加锁的线程 tc：当前给线程加锁的线程
+         * tl：最后一个加锁的线程 tn：随便某个线程
+         * 当然这些线程有可能重复，比如第一次加锁的时候tf=tc=tl=tn
+         * 节点：就是上面的Node类的对象，里面封装了线程，所以某种意义上node就等于一个线程
+         *
          * 只有一个线程 --- cas 不需要队列
          * 线程交替执行 --- cas 不需要队列
          * 资源竞争
          * -- 竞争激烈 ----park 重量级
          * -- 竞争不激烈 --- 多一次自旋
+         * 加锁过程总结：
+         * 如果是第一个线程tf，那么和队列无关，线程直接持有锁。并且也不会初始化队列，如果接下来的线程都是交替执行，
+         * 那么永远和AQS队列无关，都是直接线程持有锁，如果发生了竞争，比如tf持有锁的过程中T2来lock，那么这个时候就会初始化AQS，
+         * 初始化AQS的时候会在队列的头部虚拟一个Thread为NULL的Node，因为队列当中的head永远是持有锁的那个node（除了第一次会虚拟一个，
+         * 其他时候都是持有锁的那个线程锁封装的node），现在第一次的时候持有锁的是tf而tf不在队列当中所以虚拟了一个node节点，
+         * 队列当中的除了head之外的所有的node都在park，当tf释放锁之后unpark某个（基本是队列当中的第二个，为什么是第二个呢？
+         * 前面说过head永远是持有锁的那个node，当有时候也不会是第二个，比如第二个被cancel之后，至于为什么会被cancel，
+         * 不在我们讨论范围之内，cancel的条件很苛刻，基本不会发生）node之后，node被唤醒，假设node是t2，
+         * 那么这个时候会首先把t2变成head（sethead），在sethead方法里面会把t2代表的node设置为head，并且把node的Thread设置为null，
+         * 为什么需要设置null？其实原因很简单，现在t2已经拿到锁了，node就不要排队了，那么node对Thread的引用就没有意义了。
+         * 所以队列的head里面的Thread永远为null
          */
         abstract void lock();
 
