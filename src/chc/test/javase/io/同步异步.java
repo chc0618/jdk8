@@ -31,16 +31,17 @@ public class 同步异步 {
         // 异步阻塞
         synchronization(new Monitor() {
             @Override
-            public void returnMethod(Object obj) {
+            public int returnMethod(Object obj) {
                 System.out.println(obj + "---- 异步阻塞");
+                return (int)obj;
             }
         }, 1, 2);
 
         // 异步阻塞2
         Monitor monitor = new Monitor() {
             @Override
-            public void returnMethod(Object obj) {
-
+            public int returnMethod(Object obj) {
+                return (int)obj;
             }
         };
         synchronization(monitor, 1,2);
@@ -52,10 +53,10 @@ public class 同步异步 {
     }
     public static int synchronization(Monitor monitor, int a, int b){
         int c = a + b;
-        monitor.returnMethod(c);
+        return monitor.returnMethod(c);
     }
 
     public static interface Monitor{
-        void returnMethod(Object obj);
+        int returnMethod(Object obj);
     }
 }
