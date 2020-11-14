@@ -8,11 +8,18 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="nio" />
+        <module name="redistest" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="jdk8" target="8" />
-      <module name="nio" target="8" />
+      <module name="jdk8" target="1.5" />
+      <module name="nio" target="1.7" />
+      <module name="redistest" target="1.8" />
     </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="redistest" options="-parameters" />
+    </option>
   </component>
 </project>
