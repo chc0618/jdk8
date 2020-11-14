@@ -1,30 +1,29 @@
 package com.chc.redis.redistest;
 
-import lombok.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.RedisClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 public class RedisConfig {
-    @Value("${spring.redis.host}")
-    private String redisHost = "127.0.0.1";
 
-//    @Value("${spring.redis.port}")
-    private int redisPort = 6379;
-
-//    @Value("${redis.task.pass}")
-    private String redisPass ="";
-
+    @Bean(name = "jedisPoolConfig")
+    @ConfigurationProperties(prefix = "spring.redis.jedis")
+    public JedisPoolConfig getRedisConfig(){
+        JedisPoolConfig config = new JedisPoolConfig();
+        return config;
+    }
     @Bean(name = "factory")
-    public JedisConnectionFactory getJedisFactory(){
+    @ConfigurationProperties(prefix = "spring.redis")
+    public JedisConnectionFactory getJedisFactory(JedisPoolConfig jedisPoolConfig){
         JedisConnectionFactory connectionFactory = new JedisConnectionFactory();
-        connectionFactory.setPort(redisPort);
-        connectionFactory.setHostName(redisHost);
-//        connectionFactory.setPassword(redisPass);
+        connectionFactory.setUsePool(true);
+        connectionFactory.setPoolConfig(jedisPoolConfig);
         return connectionFactory;
     }
 
