@@ -1,6 +1,7 @@
 package com.chc.redis.redistest;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.startup.Tomcat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.jedis.RedisClient;
 import org.springframework.data.redis.core.RedisTemplate;
